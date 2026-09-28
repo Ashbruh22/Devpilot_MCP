@@ -4,6 +4,7 @@ import { repoKey, type AllowedRepo, type Config } from '../config.js';
 import { ToolError, errorMessage } from './errors.js';
 import { runCommand, sanitizedEnv } from './exec.js';
 import { log } from './logger.js';
+import { resolveInside } from './pathGuard.js';
 
 export type WorkspaceStatus = 'pending' | 'cloning' | 'installing' | 'ready' | 'failed';
 
@@ -13,6 +14,10 @@ export interface Workspace {
   /** Display name (`owner/repo` with original casing, or the folder name). */
   name: string;
   root: string;
+  /** Where the repo is cloned (remote mode); `root` may be a subfolder of it. */
+  cloneDir?: string;
+  /** Folder inside the repo used as the root, if any. */
+  subdir?: string;
   status: WorkspaceStatus;
   error?: string;
   owner?: string;
@@ -51,10 +56,13 @@ export class WorkspaceManager {
       });
     } else {
       for (const r of config.allowedRepos) {
+        const cloneDir = path.join(config.workspacesDir, `${r.owner}__${r.repo}`);
         this.workspaces.set(r.key, {
           key: r.key,
           name: `${r.owner}/${r.repo}`,
-          root: path.join(config.workspacesDir, `${r.owner}__${r.repo}`),
+          root: r.subdir ? path.join(cloneDir, r.subdir) : cloneDir,
+          cloneDir,
+          subdir: r.subdir,
           status: 'pending',
           owner: r.owner,
           repo: r.repo,
@@ -82,20 +90,36 @@ export class WorkspaceManager {
     const env = sanitizedEnv();
     try {
       mkdirSync(this.config.workspacesDir, { recursive: true });
-      if (existsSync(path.join(ws.root, '.git'))) {
+      const cloneDir = ws.cloneDir ?? ws.root;
+      if (existsSync(path.join(cloneDir, '.git'))) {
         log.info('workspace already present; reusing', { repo: ws.name, root: ws.root });
       } else {
         ws.status = 'cloning';
         const url = `${this.config.gitBaseUrl}/${r.owner}/${r.repo}.git`;
-        log.info('cloning allowlisted repo', { repo: ws.name, ref: r.ref });
+        log.info('cloning allowlisted repo', { repo: ws.name, ref: r.ref ?? '(default branch)' });
         const res = await runCommand(
           'git',
-          ['clone', '--depth', '1', '--branch', r.ref, '--single-branch', '--', url, ws.root],
+          [
+            'clone',
+            '--depth',
+            '1',
+            ...(r.ref ? ['--branch', r.ref] : []),
+            '--single-branch',
+            '--',
+            url,
+            cloneDir,
+          ],
           { cwd: this.config.workspacesDir, timeoutMs: 180_000, maxOutputChars: 8_000, env },
         );
         if (res.exitCode !== 0) {
           throw new Error(`git clone failed: ${(res.spawnError ?? res.stderr).trim().slice(-500)}`);
         }
+      }
+      if (r.subdir) {
+        // The subfolder must exist and must not be a symlink out of the clone.
+        const { abs } = resolveInside(cloneDir, r.subdir);
+        if (!existsSync(abs))
+          throw new Error(`subdir "${r.subdir}" does not exist at ${r.ref ?? 'the default branch'}`);
       }
       if (this.config.installDeps) {
         ws.status = 'installing';

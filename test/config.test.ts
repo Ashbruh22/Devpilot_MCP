@@ -23,12 +23,28 @@ describe('config', () => {
     });
     expect(c.allowedRepos).toEqual([
       { owner: 'Ashbruh22', repo: 'devpilot-demo', ref: 'main', key: 'ashbruh22/devpilot-demo' },
-      { owner: 'octo', repo: 'other', ref: 'main', key: 'octo/other' },
+      { owner: 'octo', repo: 'other', key: 'octo/other' },
     ]);
     expect(c.testCommands['ashbruh22/devpilot-demo']).toBe('npx vitest run --reporter=json');
     expect(c.host).toBe('0.0.0.0');
     expect(c.allowedHosts).toContain('devpilot.onrender.com');
     expect(c.trustProxy).toBe(true);
+  });
+
+  it('parses subfolder workspaces', () => {
+    const c = loadConfig({
+      DEVPILOT_MODE: 'remote',
+      ALLOWED_REPOS: 'Ashbruh22/Devpilot_MCP@main:demo/devpilot-demo',
+    });
+    expect(c.allowedRepos[0]).toEqual({
+      owner: 'Ashbruh22',
+      repo: 'Devpilot_MCP',
+      ref: 'main',
+      key: 'ashbruh22/devpilot_mcp',
+      subdir: 'demo/devpilot-demo',
+    });
+    expect(() => loadConfig({ ALLOWED_REPOS: 'a/b@main:../etc' })).toThrow(/without "\.\."/);
+    expect(() => loadConfig({ ALLOWED_REPOS: 'a/b@main,a/b@dev' })).toThrow(/more than once/);
   });
 
   it('fails fast with clear errors', () => {

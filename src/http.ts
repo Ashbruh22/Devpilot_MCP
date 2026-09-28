@@ -107,7 +107,9 @@ export function createHttpApp(config: Config, deps: ServerDeps = createDeps(conf
   });
 
   app.get('/healthz', (_req, res) => {
-    const workspaces = deps.workspaces.list().map((w) => ({ repo: w.name, status: w.status }));
+    const workspaces = deps.workspaces
+      .list()
+      .map((w) => ({ repo: w.name, ...(w.subdir ? { path: w.subdir } : {}), status: w.status }));
     res.json({
       status: 'ok',
       version: VERSION,

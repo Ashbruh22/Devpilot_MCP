@@ -10,10 +10,11 @@ services:
     envVars:
       - key: DEVPILOT_MODE
         value: remote
+      # The demo project lives in this repo (demo/devpilot-demo); no ref = the repo's default branch.
       - key: ALLOWED_REPOS
-        value: Ashbruh22/devpilot-demo@main
+        value: Ashbruh22/Devpilot_MCP:demo/devpilot-demo
       - key: TEST_COMMANDS
-        value: '{"Ashbruh22/devpilot-demo":"npx --no vitest run --reporter=json"}'
+        value: '{"Ashbruh22/Devpilot_MCP":"npx --no vitest run --reporter=json"}'
       - key: TEST_TIMEOUT_MS
         value: '120000'
       - key: MAX_OUTPUT_CHARS

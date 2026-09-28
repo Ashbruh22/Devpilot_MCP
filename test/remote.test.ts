@@ -19,6 +19,7 @@ function makeRemote(): string {
   const base = mkdtempSync(path.join(os.tmpdir(), 'devpilot-remote-'));
   const work = path.join(base, 'work');
   cpSync(SAMPLE_REPO, work, { recursive: true });
+  cpSync(SAMPLE_REPO, path.join(work, 'nested', 'app'), { recursive: true });
   const git = (args: string[], cwd: string) =>
     execFileSync(
       'git',
@@ -96,7 +97,7 @@ describe('remote mode', () => {
   });
 
   it('searches and reads docs in the cloned workspace', async () => {
-    const s = await call('search_codebase', { query: 'Math.floor' });
+    const s = await call('search_codebase', { query: 'Math.floor', path_glob: 'src/**' });
     expect(s.data.workspace).toBe('acme/shop');
     expect(s.data.matches[0].path).toBe('src/pricing.ts');
     const d = await call('get_docs', { topic: 'rounding', repo: 'acme/shop' });
@@ -137,6 +138,34 @@ describe('remote mode', () => {
     expect(i.data).toMatchObject({ owner: 'acme', repo: 'shop', number: 7 });
     const ok = await call('get_issue', { owner: 'ACME', repo: 'Shop', issue_number: 7 });
     expect(ok.isError).toBe(false); // allowlist match is case-insensitive
+  });
+
+  it('serves a subfolder of an allowlisted repo', async () => {
+    const sub = createDeps(
+      loadConfig({
+        DEVPILOT_MODE: 'remote',
+        ALLOWED_REPOS: 'acme/shop:nested/app', // default branch
+        GIT_BASE_URL: `file://${remoteBase}`,
+        WORKSPACES_DIR: path.join(workspacesDir, 'sub'),
+        INSTALL_DEPS: 'false',
+      }),
+    );
+    await sub.workspaces.prepareAll();
+    const ws = sub.workspaces.resolve();
+    expect(ws.status).toBe('ready');
+    expect(ws.root).toBe(path.join(workspacesDir, 'sub', 'acme__shop', 'nested', 'app'));
+
+    const bad = createDeps(
+      loadConfig({
+        DEVPILOT_MODE: 'remote',
+        ALLOWED_REPOS: 'acme/shop@main:does/not/exist',
+        GIT_BASE_URL: `file://${remoteBase}`,
+        WORKSPACES_DIR: path.join(workspacesDir, 'sub2'),
+        INSTALL_DEPS: 'false',
+      }),
+    );
+    await bad.workspaces.prepareAll();
+    expect(() => bad.workspaces.resolve()).toThrow(/subdir "does\/not\/exist" does not exist/);
   });
 
   it('reports workspaces that failed to prepare', async () => {

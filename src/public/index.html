@@ -160,39 +160,6 @@
         color: var(--muted);
         margin: 0 0 22px;
       }
-      .video {
-        position: relative;
-        aspect-ratio: 16 / 9;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        overflow: hidden;
-        background: radial-gradient(ellipse at top, #1a2133, var(--bg-2));
-        display: grid;
-        place-items: center;
-      }
-      .video iframe {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        border: 0;
-      }
-      .video .placeholder {
-        text-align: center;
-        color: var(--muted);
-        padding: 20px;
-      }
-      .video .play {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        border: 2px solid var(--accent);
-        display: grid;
-        place-items: center;
-        margin: 0 auto 12px;
-        color: var(--accent);
-        font-size: 22px;
-      }
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -350,20 +317,6 @@
         </div>
       </div>
 
-      <section id="demo">
-        <h2>Demo</h2>
-        <p class="sub">
-          Claude Code triaging a demo-repo issue end to end with the <code>triage_issue</code> prompt.
-        </p>
-        <!-- Set data-video-url to a YouTube/Loom *embed* URL to show the demo video. -->
-        <div class="video" id="video" data-video-url="">
-          <div class="placeholder">
-            <div class="play">▶</div>
-            Demo video coming soon.
-          </div>
-        </div>
-      </section>
-
       <section id="tools">
         <h2>The loop, as six tools</h2>
         <p class="sub">
@@ -421,7 +374,9 @@
           </div>
           <div class="cmd">
             <div class="label">
-              <span>Remote (Streamable HTTP, this server's allowlisted demo repo)</span>
+              <span
+                >Remote (Streamable HTTP, works on <span id="ws-name">this server's demo repo</span>)</span
+              >
             </div>
             <div class="row">
               <code id="cmd-remote"
@@ -430,9 +385,11 @@
             </div>
           </div>
           <div class="cmd">
-            <div class="label"><span>Then, in Claude Code</span></div>
+            <div class="label"><span>Then ask Claude Code</span></div>
             <div class="row">
-              <code id="cmd-prompt">/mcp__devpilot__triage_issue Ashbruh22 devpilot-demo 1</code
+              <code id="cmd-prompt"
+                >Use devpilot to run the tests, summarize the failures, and propose a fix for the largest
+                group.</code
               ><button class="copy" data-target="cmd-prompt">Copy</button>
             </div>
           </div>
@@ -629,19 +586,6 @@
           });
         });
 
-        // Demo video embed, if configured.
-        var video = document.getElementById('video');
-        var url = video.getAttribute('data-video-url');
-        if (url) {
-          var iframe = document.createElement('iframe');
-          iframe.src = url;
-          iframe.title = 'DevPilot MCP demo';
-          iframe.allow = 'accelerometer; clipboard-write; encrypted-media; picture-in-picture; fullscreen';
-          iframe.allowFullscreen = true;
-          video.innerHTML = '';
-          video.appendChild(iframe);
-        }
-
         // Live status dot.
         var dot = document.getElementById('dot');
         var text = document.getElementById('status-text');
@@ -662,6 +606,9 @@
               });
               text.textContent = 'online · v' + h.version + (ready ? '' : ' · preparing workspace');
               document.getElementById('version').textContent = 'v' + h.version;
+              var ws = (h.workspaces || [])[0];
+              if (ws)
+                document.getElementById('ws-name').textContent = ws.repo + (ws.path ? '/' + ws.path : '');
             })
             .catch(function () {
               clearTimeout(t);

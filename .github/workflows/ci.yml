@@ -43,6 +43,6 @@ jobs:
       - name: Boot and check /healthz
         run: |
           docker run -d --name devpilot -p 3000:3000 \
-            -e ALLOWED_REPOS=Ashbruh22/devpilot-demo@main -e INSTALL_DEPS=false devpilot-mcp
+            -e ALLOWED_REPOS=Ashbruh22/Devpilot_MCP:demo/devpilot-demo -e INSTALL_DEPS=false devpilot-mcp
           for i in $(seq 1 30); do curl -fsS localhost:3000/healthz && exit 0; sleep 1; done
           docker logs devpilot; exit 1

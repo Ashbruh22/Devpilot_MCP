@@ -6,9 +6,12 @@ export type Mode = 'local' | 'remote';
 export interface AllowedRepo {
   owner: string;
   repo: string;
-  ref: string;
+  /** Branch or tag to clone; the repo's default branch when omitted. */
+  ref?: string;
   /** Lowercased `owner/repo`, used as the lookup key everywhere. */
   key: string;
+  /** Optional folder inside the repo to use as the workspace root (monorepos, bundled demos). */
+  subdir?: string;
 }
 
 export interface Config {
@@ -35,7 +38,8 @@ export interface Config {
   installDeps: boolean;
 }
 
-const REPO_RE = /^([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)(?:@([A-Za-z0-9._/-]+))?$/;
+// owner/repo[@ref][:subdir]
+const REPO_RE = /^([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)(?:@([A-Za-z0-9._/-]+))?(?::([A-Za-z0-9._/-]+))?$/;
 
 export function repoKey(owner: string, repo: string): string {
   return `${owner}/${repo}`.toLowerCase();
@@ -51,12 +55,31 @@ function parseAllowedRepos(raw: string, ctx: z.RefinementCtx): AllowedRepo[] {
     if (!m) {
       ctx.addIssue({
         code: 'custom',
-        message: `ALLOWED_REPOS entry "${entry}" is not of the form owner/repo@ref`,
+        message: `ALLOWED_REPOS entry "${entry}" is not of the form owner/repo@ref[:subdir]`,
       });
       continue;
     }
-    const [, owner, repo, ref] = m as unknown as [string, string, string, string | undefined];
-    out.push({ owner, repo, ref: ref ?? 'main', key: repoKey(owner, repo) });
+    const [, owner, repo, ref, rawSubdir] = m as unknown as [
+      string,
+      string,
+      string,
+      string | undefined,
+      string | undefined,
+    ];
+    const subdir = rawSubdir?.replace(/^\.?\/+|\/+$/g, '') || undefined;
+    if (subdir && (subdir.split('/').includes('..') || path.isAbsolute(subdir))) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `ALLOWED_REPOS entry "${entry}": subdir must be a relative path without ".."`,
+      });
+      continue;
+    }
+    const key = repoKey(owner, repo);
+    if (out.some((r) => r.key === key)) {
+      ctx.addIssue({ code: 'custom', message: `ALLOWED_REPOS lists ${owner}/${repo} more than once` });
+      continue;
+    }
+    out.push({ owner, repo, key, ...(ref ? { ref } : {}), ...(subdir ? { subdir } : {}) });
   }
   return out;
 }
