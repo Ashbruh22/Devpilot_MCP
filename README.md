@@ -10,8 +10,6 @@ DevPilot is a [Model Context Protocol](https://modelcontextprotocol.io) server (
 AI coding agents like Claude Code structured, scoped access to **GitHub issues, a codebase, its docs, and its test
 suite**. It runs locally over stdio (`npx`) or remotely over Streamable HTTP.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Ashbruh22/Devpilot_MCP)
-
 - **Live server:** [devpilot-mcp.onrender.com](https://devpilot-mcp.onrender.com) (the landing page, with `/mcp` as the MCP endpoint). See [Deployment](#deployment).
 
 ---
@@ -197,7 +195,7 @@ The tests cover:
 **Docker → Render.** The repo includes a multi-stage [`Dockerfile`](Dockerfile) (non-root, `tini`, git) and a
 [`render.yaml`](render.yaml) blueprint:
 
-1. Click **Deploy to Render** at the top of this README, or in Render go to **New → Blueprint** and pick this repo.
+1. In Render, go to **New → Blueprint** and pick this repo.
    Render reads `render.yaml`, builds the Docker image, and creates a free web service.
 2. When prompted, set `GITHUB_TOKEN`: a fine-grained PAT with read-only access to public repositories. It's needed
    for `get_issue`/`analyze_issue`, since unauthenticated calls share a 60/hour limit. Leave `DEVPILOT_API_KEY` empty
