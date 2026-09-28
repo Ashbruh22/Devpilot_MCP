@@ -1,0 +1,6 @@
+{
+  "title": "applyDiscount returns 6.69 instead of 6.70",
+  "labels": ["bug"],
+  "body": "Using the pricing module:\n\n```ts\nimport { applyDiscount } from './src/pricing';\nconsole.log(applyDiscount(10, 33)); // 6.69, expected 6.7\n```\n\nLooks like a rounding problem in `src/pricing.ts`.",
+  "comments": []
+}

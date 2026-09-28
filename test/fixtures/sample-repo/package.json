@@ -1,0 +1,7 @@
+{
+  "name": "sample-repo",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "vitest run" },
+  "devDependencies": { "vitest": "*" }
+}

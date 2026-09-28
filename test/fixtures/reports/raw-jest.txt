@@ -1,0 +1,18 @@
+FAIL src/cart.test.js
+  cart
+    ✓ totals items (3 ms)
+    ✕ applies coupon (4 ms)
+
+  ● cart › applies coupon
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 45
+    Received: 50
+
+      at Object.toBe (src/cart.test.js:14:30)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 passed, 2 total
+Snapshots:   0 total
+Time:        0.512 s

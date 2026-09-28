@@ -1,0 +1,7 @@
+dist
+node_modules
+coverage
+package-lock.json
+test/fixtures
+demo/**/package-lock.json
+bench/results.csv

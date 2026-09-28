@@ -1,0 +1,10 @@
+ ❯ src/pricing.test.ts (3 tests | 1 failed) 12ms
+   × applyDiscount > rounds 33% off 10 to cents 10ms
+     → expected 6.69 to be 6.7 // Object.is equality
+
+ FAIL  src/pricing.test.ts > applyDiscount > rounds 33% off 10 to cents
+AssertionError: expected 6.69 to be 6.7 // Object.is equality
+ ❯ src/pricing.test.ts:10:35
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)

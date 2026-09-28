@@ -1,0 +1,67 @@
+{
+  "name": "@ashbruh22/devpilot-mcp",
+  "version": "1.0.0",
+  "description": "MCP server giving AI coding agents structured, scoped access to GitHub issues, a codebase, its docs, and its test suite.",
+  "type": "module",
+  "bin": {
+    "devpilot-mcp": "dist/stdio.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/postbuild.mjs",
+    "dev:stdio": "tsx src/stdio.ts",
+    "dev:http": "tsx src/http.ts",
+    "start": "node dist/http.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "inspector": "npx -y @modelcontextprotocol/inspector node dist/stdio.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "github",
+    "ai-agent",
+    "developer-tools"
+  ],
+  "author": "Ashbruh22",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ashbruh22/devpilot_mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/express": "2.0.1",
+    "@modelcontextprotocol/node": "2.1.0",
+    "@modelcontextprotocol/server": "2.1.0",
+    "@octokit/rest": "22.0.1",
+    "@vscode/ripgrep": "1.18.0",
+    "express": "5.2.1",
+    "express-rate-limit": "8.7.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@modelcontextprotocol/client": "2.1.0",
+    "@types/express": "5.0.6",
+    "@types/node": "22.20.4",
+    "eslint": "9.39.5",
+    "globals": "17.12.0",
+    "nock": "14.0.17",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.1",
+    "vitest": "3.2.7"
+  }
+}

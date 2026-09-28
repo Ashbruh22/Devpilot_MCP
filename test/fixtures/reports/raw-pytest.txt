@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+collected 4 items
+
+tests/test_dates.py .F                                                   [ 50%]
+tests/test_pricing.py .s                                                 [100%]
+
+=========================== short test summary info ============================
+FAILED tests/test_dates.py::test_days_in_month_feb_leap - assert 31 == 29
+==================== 1 failed, 2 passed, 1 skipped in 0.05s ====================

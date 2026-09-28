@@ -1,0 +1,4 @@
+Error: Request failed with status code 500
+renderCart@http://localhost:5173/src/cart.ts:18:11
+@http://localhost:5173/src/main.ts:4:1
+dispatch@http://localhost:5173/node_modules/.vite/deps/react-dom.js:3000:22

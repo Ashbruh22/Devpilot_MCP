@@ -1,0 +1,6 @@
+{
+  "title": "Checkout crashes with TypeError when cart is empty",
+  "labels": [],
+  "body": "When I open the checkout page with an empty cart the whole app crashes.\n\n**Steps to reproduce**\n1. Clear the cart\n2. Go to /checkout\n\n```\nTypeError: Cannot read properties of undefined (reading 'map')\n    at renderItems (/app/src/components/list.js:42:17)\n    at checkoutPage (/app/src/pages/checkout.js:10:5)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n```\n\nExpected an empty-state message instead. I think `renderItems` doesn't handle `cart.items` being undefined.",
+  "comments": [{ "body": "Same here, also getting `HTTP 500 Internal Server Error` from /api/cart after that." }]
+}

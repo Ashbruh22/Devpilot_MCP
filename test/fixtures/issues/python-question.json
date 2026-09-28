@@ -1,0 +1,6 @@
+{
+  "title": "How do I configure the billing period?",
+  "labels": ["question"],
+  "body": "Is it possible to change the billing period? I looked at docs/billing.md but I'm not sure. Running it gives:\n\n```\nTraceback (most recent call last):\n  File \"/srv/app/services/billing.py\", line 88, in compute_invoice\n    total = subtotal / count\nZeroDivisionError: division by zero\n```",
+  "comments": []
+}

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/srv/app/main.py", line 12, in <module>
+    run()
+  File "/srv/app/services/billing.py", line 88, in compute_invoice
+    total = subtotal / count
+  File "/usr/lib/python3.12/site-packages/decimal_helpers/core.py", line 5, in div
+    return a / b
+ZeroDivisionError: division by zero

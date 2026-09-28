@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="2" skipped="1" tests="5" time="0.051" timestamp="2026-09-28T10:00:00" hostname="box"><testcase classname="tests.test_dates" name="test_add_days" file="tests/test_dates.py" line="4" time="0.001" /><testcase classname="tests.test_dates" name="test_days_in_month_feb_leap" file="tests/test_dates.py" line="9" time="0.001"><failure message="assert 31 == 29&#10; +  where 31 = days_in_month(2024, 2)">def test_days_in_month_feb_leap():
+&gt;       assert days_in_month(2024, 2) == 29
+E       assert 31 == 29
+E        +  where 31 = days_in_month(2024, 2)
+
+tests/test_dates.py:10: AssertionError</failure></testcase><testcase classname="tests.test_pricing" name="test_bulk_discount" file="tests/test_pricing.py" line="12" time="0.002"><failure message="ZeroDivisionError: division by zero">def test_bulk_discount():
+&gt;       assert unit_price(100, 0) == 0
+tests/test_pricing.py:13:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+total = 100, qty = 0
+
+    def unit_price(total, qty):
+&gt;       return total / qty
+E       ZeroDivisionError: division by zero
+
+app/pricing.py:4: ZeroDivisionError</failure></testcase><testcase classname="tests.test_pricing" name="test_format" file="tests/test_pricing.py" line="20" time="0.001"><skipped type="pytest.skip" message="not implemented">tests/test_pricing.py:21: not implemented</skipped></testcase><testcase classname="tests.test_pricing" name="test_round" file="tests/test_pricing.py" line="25" time="0.001" /></testsuite></testsuites>
