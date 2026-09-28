@@ -13,7 +13,7 @@ suite**. It runs locally over stdio (`npx`) or remotely over Streamable HTTP.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Ashbruh22/Devpilot_MCP)
 
-- **Live server:** `https://<your-app>.onrender.com` (the landing page, with `/mcp` as the MCP endpoint). See [Deployment](#deployment).
+- **Live server:** [devpilot-mcp.onrender.com](https://devpilot-mcp.onrender.com) (the landing page, with `/mcp` as the MCP endpoint). See [Deployment](#deployment).
 
 ---
 
@@ -73,9 +73,9 @@ Any other MCP client works too:
 ### Remote (Streamable HTTP)
 
 ```bash
-claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp
+claude mcp add --transport http devpilot https://devpilot-mcp.onrender.com/mcp
 # if the server sets DEVPILOT_API_KEY:
-claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp --header "Authorization: Bearer <key>"
+claude mcp add --transport http devpilot https://devpilot-mcp.onrender.com/mcp --header "Authorization: Bearer <key>"
 ```
 
 The hosted server works on the demo project bundled in this repo ([`demo/devpilot-demo`](demo/devpilot-demo)), which
@@ -206,7 +206,7 @@ The tests cover:
 3. On boot, the server shallow-clones this repo, uses `demo/devpilot-demo` as its workspace
    (`ALLOWED_REPOS=Ashbruh22/Devpilot_MCP:demo/devpilot-demo`), and installs that project's dependencies. `/healthz`
    reports `"ready"` after a few seconds. Render's hostname is added to the Host allowlist automatically.
-4. Connect with `claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp`.
+4. Connect with `claude mcp add --transport http devpilot https://devpilot-mcp.onrender.com/mcp`.
 5. Free instances sleep when idle: the first request can take 30–60 s. To keep it warm, set the repository variable
    `DEVPILOT_URL` to the service URL, which enables the [`keepalive`](.github/workflows/keepalive.yml) workflow (a 10-minute ping). Check
    Render's current free-tier terms first.

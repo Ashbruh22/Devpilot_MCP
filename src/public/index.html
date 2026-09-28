@@ -380,7 +380,7 @@
             </div>
             <div class="row">
               <code id="cmd-remote"
-                >claude mcp add --transport http devpilot https://&lt;your-app&gt;.onrender.com/mcp</code
+                >claude mcp add --transport http devpilot https://devpilot-mcp.onrender.com/mcp</code
               ><button class="copy" data-target="cmd-remote">Copy</button>
             </div>
           </div>
@@ -569,7 +569,7 @@
         <nav>
           <a href="https://github.com/Ashbruh22/devpilot_mcp">GitHub</a>
           <a href="https://www.npmjs.com/package/@ashbruh22/devpilot-mcp">npm</a>
-          <a href="https://github.com/Ashbruh22" id="portfolio">Portfolio</a>
+          <a href="https://portfoliowebsite-three-blush.vercel.app" id="portfolio">Portfolio</a>
           <a href="/healthz">/healthz</a>
         </nav>
       </footer>
@@ -577,12 +577,6 @@
 
     <script>
       (function () {
-        // Remote command uses this server's real origin.
-        var remote = document.getElementById('cmd-remote');
-        if (location.protocol.indexOf('http') === 0) {
-          remote.textContent = 'claude mcp add --transport http devpilot ' + location.origin + '/mcp';
-        }
-
         // Copy buttons.
         document.querySelectorAll('button.copy').forEach(function (btn) {
           btn.addEventListener('click', function () {
