@@ -11,8 +11,9 @@ DevPilot is a [Model Context Protocol](https://modelcontextprotocol.io) server (
 AI coding agents like Claude Code structured, scoped access to **GitHub issues, a codebase, its docs, and its test
 suite**. It runs locally over stdio (`npx`) or remotely over Streamable HTTP.
 
-- **Live demo:** `https://<your-app>.onrender.com` _(landing page and `/mcp` endpoint; set after deploying, see [Deployment](#deployment))_
-- **Demo video:** _coming soon_
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Ashbruh22/Devpilot_MCP)
+
+- **Live server:** `https://<your-app>.onrender.com` (the landing page, with `/mcp` as the MCP endpoint). See [Deployment](#deployment).
 
 ---
 
@@ -77,7 +78,9 @@ claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp
 claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp --header "Authorization: Bearer <key>"
 ```
 
-The hosted server works on its allowlisted demo repo ([`demo/`](demo)), e.g. `/mcp__devpilot__triage_issue Ashbruh22 devpilot-demo 1`.
+The hosted server works on the demo project bundled in this repo ([`demo/devpilot-demo`](demo/devpilot-demo)), which
+has two real bugs. Try: _"Use devpilot to run the tests, summarize the failures, and propose a fix for the largest
+group."_
 
 ## Architecture
 
@@ -151,7 +154,7 @@ All configuration comes from environment variables, validated at startup. See [`
 | `GITHUB_TOKEN`                    | both   | –                          | Fine-grained PAT. Read-only, public repos only for the hosted deployment |
 | `WORKSPACE_ROOT`                  | local  | `cwd`                      | Repo to operate on                                                       |
 | `TEST_COMMAND`                    | local  | auto-detect                | Override the detected test command                                       |
-| `ALLOWED_REPOS`                   | remote | – (required)               | `owner/repo@ref,…`                                                       |
+| `ALLOWED_REPOS`                   | remote | – (required)               | `owner/repo[@ref][:subdir],…`                                            |
 | `TEST_COMMANDS`                   | remote | `{}`                       | JSON `{"owner/repo": "command"}`                                         |
 | `DEVPILOT_API_KEY`                | remote | –                          | Bearer token for `/mcp`. Unset means a public demo                       |
 | `PORT` / `HOST`                   | remote | `3000` / `0.0.0.0`         | Listen address (`127.0.0.1` in local mode)                               |
@@ -194,12 +197,17 @@ The tests cover:
 **Docker → Render.** The repo includes a multi-stage [`Dockerfile`](Dockerfile) (non-root, `tini`, git) and a
 [`render.yaml`](render.yaml) blueprint:
 
-1. Publish the demo repo: `demo/publish.sh Ashbruh22 devpilot-demo` (needs `gh`).
-2. In Render, go to **New → Blueprint**, pick this repo, and set `GITHUB_TOKEN` (fine-grained, read-only, public
-   repos). Optionally set `DEVPILOT_API_KEY`.
-3. The health check path is `/healthz`. Render's hostname is added to the Host allowlist automatically.
-4. Free instances sleep when idle: the first request can take 30–60 s. To keep it warm, set the repository variable
-   `DEVPILOT_URL`, which enables the [`keepalive`](.github/workflows/keepalive.yml) workflow (a 10-minute ping). Check
+1. Click **Deploy to Render** at the top of this README, or in Render go to **New → Blueprint** and pick this repo.
+   Render reads `render.yaml`, builds the Docker image, and creates a free web service.
+2. When prompted, set `GITHUB_TOKEN`: a fine-grained PAT with read-only access to public repositories. It's needed
+   for `get_issue`/`analyze_issue`, since unauthenticated calls share a 60/hour limit. Leave `DEVPILOT_API_KEY` empty
+   for a public demo, or set it to require a bearer token.
+3. On boot, the server shallow-clones this repo, uses `demo/devpilot-demo` as its workspace
+   (`ALLOWED_REPOS=Ashbruh22/Devpilot_MCP:demo/devpilot-demo`), and installs that project's dependencies. `/healthz`
+   reports `"ready"` after a few seconds. Render's hostname is added to the Host allowlist automatically.
+4. Connect with `claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp`.
+5. Free instances sleep when idle: the first request can take 30–60 s. To keep it warm, set the repository variable
+   `DEVPILOT_URL` to the service URL, which enables the [`keepalive`](.github/workflows/keepalive.yml) workflow (a 10-minute ping). Check
    Render's current free-tier terms first.
 
 **npm.** Tag a release (`git tag v1.0.0 && git push --tags`) and the [`release`](.github/workflows/release.yml)
