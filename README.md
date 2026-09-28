@@ -5,7 +5,6 @@
 [![CI](https://github.com/Ashbruh22/devpilot_mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Ashbruh22/devpilot_mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@ashbruh22/devpilot-mcp.svg)](https://www.npmjs.com/package/@ashbruh22/devpilot-mcp)
 ![node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)
-![license](https://img.shields.io/badge/license-MIT-blue)
 
 DevPilot is a [Model Context Protocol](https://modelcontextprotocol.io) server (TypeScript, MCP SDK v2) that gives
 AI coding agents like Claude Code structured, scoped access to **GitHub issues, a codebase, its docs, and its test
@@ -224,7 +223,3 @@ to change"), each timed once without DevPilot (the agent reads files and runs co
 
 > **Status:** the harness and tasks are in place. The results table is empty until the runs are done, so no
 > time-saved number is claimed yet. Quote only the measured median.
-
-## License
-
-MIT
