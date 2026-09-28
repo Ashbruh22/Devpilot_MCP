@@ -80,7 +80,8 @@ claude mcp add --transport http devpilot https://<your-app>.onrender.com/mcp --h
 
 The hosted server works on the demo project bundled in this repo ([`demo/devpilot-demo`](demo/devpilot-demo)), which
 has two real bugs. Try: _"Use devpilot to run the tests, summarize the failures, and propose a fix for the largest
-group."_
+group."_ Or triage one of the [demo issues](https://github.com/Ashbruh22/Devpilot_MCP/issues?q=label%3Ademo) end to
+end: `/mcp__devpilot__triage_issue Ashbruh22 Devpilot_MCP 1`.
 
 ## Architecture
 

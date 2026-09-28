@@ -5,16 +5,16 @@ the median differs from any number on a résumé or landing page, update that nu
 
 ## Tasks
 
-[`tasks.json`](tasks.json) has 10 tasks on the demo repo ([`../demo`](../demo), published as
-`Ashbruh22/devpilot-demo` with issues #1–#5). Most take the form "find the root cause of issue #N and the file to
+[`tasks.json`](tasks.json) has 10 tasks on the demo project ([`../demo`](../demo)), whose issues are filed on this
+repo as [#1–#5](https://github.com/Ashbruh22/Devpilot_MCP/issues?q=label%3Ademo). Most take the form "find the root cause of issue #N and the file to
 change". Each task has a ground-truth answer (files and root cause) for scoring correctness.
 
 ## Conditions
 
-| Condition  | Setup                                                                                                                                                    |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `manual`   | Claude Code **without** DevPilot. The agent reads the issue (`gh issue view` or the pasted URL), greps, reads files, and runs `npm test` itself.         |
-| `devpilot` | Claude Code **with** DevPilot connected. Start with `/mcp__devpilot__triage_issue Ashbruh22 devpilot-demo <N>` (or the task prompt for non-issue tasks). |
+| Condition  | Setup                                                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manual`   | Claude Code **without** DevPilot. The agent reads the issue (`gh issue view` or the pasted URL), greps, reads files, and runs `npm test` itself.        |
+| `devpilot` | Claude Code **with** DevPilot connected. Start with `/mcp__devpilot__triage_issue Ashbruh22 Devpilot_MCP <N>` (or the task prompt for non-issue tasks). |
 
 Keep everything else fixed: the same model, the same machine, a fresh clone of the demo repo at the same commit, a
 fresh session per run, and the same task prompt.

@@ -12,10 +12,12 @@
 - `issues/`: five issues written like real user reports (a code snippet, a stack trace, a vague
   feature request, a docs question, and a "bug" that is actually intended behaviour).
 
+The five issues are filed on this repo as [#1–#5](https://github.com/Ashbruh22/Devpilot_MCP/issues?q=label%3Ademo)
+(label `demo`), so the hosted server's `get_issue`, `analyze_issue`, and `triage_issue` work on them directly.
+
 ## Optional: publish as a standalone repo
 
-The hosted server doesn't need this. If you want the demo issues on GitHub so `get_issue` and `triage_issue` have
-something to fetch, run:
+The hosted server doesn't need this. To move the demo into its own repo, run:
 
 ```bash
 demo/publish.sh Ashbruh22 devpilot-demo   # needs an authenticated `gh`
