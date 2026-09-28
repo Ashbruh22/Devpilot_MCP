@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeIssueContent, type AnalyzableIssue } from '../src/lib/issueAnalysis.js';
-import { fixture } from './helpers.js';
+import {
+  analyzeIssueContent,
+  extractModuleSpecifiers,
+  mapToWorkspace,
+  type AnalyzableIssue,
+} from '../src/lib/issueAnalysis.js';
+import { fixture, SAMPLE_REPO } from './helpers.js';
 
 const issue = (name: string) => JSON.parse(fixture(`issues/${name}.json`)) as AnalyzableIssue;
 
@@ -63,5 +68,60 @@ describe('analyzeIssueContent', () => {
       comments: [],
     });
     expect(a.type_guess).toBe('docs');
+  });
+
+  it("maps absolute frames from the reporter's machine onto workspace files", () => {
+    expect(mapToWorkspace('/home/me/shop/src/pricing.ts', SAMPLE_REPO)).toBe('src/pricing.ts');
+    expect(mapToWorkspace('/home/me/shop/src/nope.ts', SAMPLE_REPO)).toBe('/home/me/shop/src/nope.ts');
+    const a = analyzeIssueContent(
+      {
+        title: 'Crash',
+        body: '```\nRangeError: Invalid discount percent: 120\n    at assertValidPercent (/Users/me/code/shop/src/pricing.ts:3:11)\n    at checkout (/Users/me/code/app/cart.js:9:3)\n```',
+        labels: [],
+        comments: [],
+      },
+      SAMPLE_REPO,
+    );
+    expect(a.stack_frames[0]).toMatchObject({ file: 'src/pricing.ts', function: 'assertValidPercent' });
+    expect(a.suggested_search_queries.slice(0, 2)).toEqual(['assertValidPercent', 'checkout']);
+    expect(a.mentioned_paths).toContain('src/pricing.ts');
+  });
+
+  it('extracts imported module names (JS and Python)', () => {
+    const blocks = [
+      {
+        source: 'body',
+        lang: 'ts',
+        code: "import { a } from './src/pricing';\nconst x = require('../lib/util');\nimport 'zod';",
+      },
+      { source: 'body', lang: 'py', code: 'from app.services.billing import compute\nimport os.path' },
+    ];
+    expect(extractModuleSpecifiers(blocks)).toEqual([
+      'src/pricing',
+      'lib/util',
+      'app.services.billing',
+      'os.path',
+    ]);
+  });
+
+  it('reads capability-style titles as features and falls back to title keywords', () => {
+    const a = analyzeIssueContent({
+      title: 'Support other currencies?',
+      body: 'Would be nice to have EUR.',
+      labels: [],
+      comments: [],
+    });
+    expect(a.type_guess).toBe('feature');
+    expect(a.suggested_search_queries).toEqual(['currency']);
+  });
+
+  it('ignores language builtins in inline code', () => {
+    const a = analyzeIssueContent({
+      title: 'x',
+      body: 'I think `Math.floor` in `roundToCents` is wrong',
+      labels: [],
+      comments: [],
+    });
+    expect(a.suggested_search_queries).toEqual(['roundToCents']);
   });
 });

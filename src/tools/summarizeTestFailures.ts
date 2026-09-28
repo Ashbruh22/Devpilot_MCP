@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod';
 import { ToolError } from '../lib/errors.js';
-import { groupFailures, summarizeFailure } from '../lib/failures.js';
+import { groupFailures, normalizeMessage, summarizeFailure } from '../lib/failures.js';
 import { readOnly, safe, toolResult, type ServerDeps } from './shared.js';
 
 const frame = z.object({
@@ -61,8 +61,13 @@ export function registerSummarizeTestFailures(server: McpServer, deps: ServerDep
           `Unknown run_id "${run_id}". Runs are kept in memory (last 20) and are lost on restart; call run_tests again.`,
         );
       }
-      const all = run.report.failures.map((f) => summarizeFailure(f, run.root));
-      const groups = groupFailures(all);
+      const summaries = run.report.failures.map((f) => summarizeFailure(f, run.root));
+      const groups = groupFailures(summaries);
+      // Order failures like their groups (largest first) so truncation drops the long tail.
+      const rank = new Map(groups.map((g, i) => [g.signature, i]));
+      const all = [...summaries].sort(
+        (a, b) => (rank.get(normalizeMessage(a.message)) ?? 0) - (rank.get(normalizeMessage(b.message)) ?? 0),
+      );
 
       // Keep the response within budget: drop per-failure detail before dropping groups.
       const perFailure = 1_200;
@@ -85,7 +90,7 @@ export function registerSummarizeTestFailures(server: McpServer, deps: ServerDep
             : `Run ${run_id} had no failing tests.`;
       } else {
         const top = groups[0]!;
-        const sources = [...new Set(all.flatMap((f) => f.likely_source_files))];
+        const sources = [...new Set(groups.flatMap((g) => g.likely_source_files))];
         summary =
           `${all.length} failure(s) in ${groups.length} group(s). Largest group (${top.count}): ${top.signature}. ` +
           (sources.length

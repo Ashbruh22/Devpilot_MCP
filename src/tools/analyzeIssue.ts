@@ -47,7 +47,16 @@ export function registerAnalyzeIssue(server: McpServer, deps: ServerDeps): void 
       const target = await deps.workspaces.resolveIssueRepo(owner, repo);
       // Reuses get_issue's fetch and 60s cache (same key with the default comment count).
       const issue = await deps.github.getIssue(target.owner, target.repo, issue_number, 20);
-      const root = deps.config.mode === 'local' ? deps.config.workspaceRoot : undefined;
+      // Map stack frames onto the workspace when it is available (remote: the cloned repo, if ready).
+      let root: string | undefined;
+      try {
+        root =
+          deps.config.mode === 'local'
+            ? deps.config.workspaceRoot
+            : deps.workspaces.resolve(`${target.owner}/${target.repo}`).root;
+      } catch {
+        root = undefined;
+      }
       const analysis = analyzeIssueContent(issue, root);
       const data = {
         owner: issue.owner,

@@ -5,3 +5,4 @@ coverage/
 *.log
 .DS_Store
 demo/devpilot-demo/node_modules/
+test/.workspaces/

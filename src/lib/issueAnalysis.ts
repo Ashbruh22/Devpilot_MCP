@@ -1,9 +1,12 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import {
   isProjectFrame,
   normalizeFramePath,
   parseStackFrames,
   type StackFrame,
 } from './parsers/stackTrace.js';
+import { isSafeRelative } from './pathGuard.js';
 import { truncateText } from './truncate.js';
 
 export type IssueType = 'bug' | 'feature' | 'question' | 'docs';
@@ -49,11 +52,13 @@ const KEYWORDS: Record<IssueType, RegExp[]> = {
     /\b(could you add|can we (have|add)|enhancement)\b/i,
   ],
   question: [
-    /\b(how (do|can|should) (i|we)|is it possible|what is the (right|best) way|question)\b/i,
-    /\?\s*$/m,
+    /\b(how (do|can|should|does|is) (i|we|it|this)|is it possible|what is the (right|best) way|question)\b/i,
   ],
   docs: [/\b(docs?|documentation|readme|typo|guide|tutorial|example in the docs)\b/i],
 };
+
+// Titles phrased as a capability ("Support X", "Add Y") read as feature requests.
+const FEATURE_TITLE = /^(support|add|allow|implement|provide|expose|enable)\b/i;
 
 const ERROR_LINE_PATTERNS: RegExp[] = [
   /\b[A-Z]\w*(Error|Exception)\b(:|\s-\s|$)/, // TypeError: …, ValueError: …, java.lang.IllegalStateException
@@ -157,6 +162,24 @@ export function extractMentionedPaths(text: string): string[] {
   );
 }
 
+const MODULE_SPEC_RE =
+  /\bfrom\s+['"]([^'"]+)['"]|\brequire\(\s*['"]([^'"]+)['"]\s*\)|\bimport\s+['"]([^'"]+)['"]|^\s*from\s+([\w.]+)\s+import\b|^\s*import\s+(\w+(?:\.\w+)+)\s*$/gm;
+
+/** Module names imported in code snippets, e.g. "./src/pricing" → "src/pricing", "app.services.billing". */
+export function extractModuleSpecifiers(blocks: CodeBlock[]): string[] {
+  const out: string[] = [];
+  for (const b of blocks) {
+    for (const m of b.code.matchAll(MODULE_SPEC_RE)) {
+      const spec = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? '').trim();
+      if (!spec || spec.startsWith('node:') || /^https?:/.test(spec)) continue;
+      // Keep relative/path-like specifiers and dotted Python modules; skip bare npm packages.
+      if (!spec.includes('/') && !/^\w+(\.\w+)+$/.test(spec)) continue;
+      out.push(spec.replace(/^(\.\.?\/)+/, ''));
+    }
+  }
+  return out;
+}
+
 function guessType(
   issue: AnalyzableIssue,
   hasErrors: boolean,
@@ -180,6 +203,12 @@ function guessType(
       }
     }
   }
+  if (FEATURE_TITLE.test(issue.title.trim())) {
+    scores.feature += 2;
+    signals.push(`feature: title starts with "${issue.title.trim().split(/\s+/)[0]}"`);
+  }
+  // A trailing question mark is weak evidence (bug reports ask questions too).
+  if (/\?\s*$/m.test(text)) scores.question += 0.5;
   if (hasErrors) {
     scores.bug += 2;
     signals.push('bug: error messages present');
@@ -199,6 +228,28 @@ function guessType(
   }
   return { type: best, signals: bestScore ? signals : ['no strong signals; defaulting to question'] };
 }
+
+const GLOBAL_OBJECTS = new Set([
+  'Math',
+  'JSON',
+  'Object',
+  'Array',
+  'Number',
+  'String',
+  'Date',
+  'Promise',
+  'console',
+  'process',
+  'window',
+  'document',
+  'Reflect',
+  'Intl',
+  'Symbol',
+  'os',
+  'sys',
+  'json',
+  'math',
+]);
 
 const CALL_RE = /(?<![\w$.])([A-Za-z_$][\w$]{2,})\s*\(/g;
 const IMPORT_RE = /\bimport\s*\{([^}]+)\}|\bfrom\s+[\w.]+\s+import\s+([\w, ]+)/g;
@@ -259,7 +310,17 @@ function identifiersFromCode(blocks: CodeBlock[]): string[] {
         if (IDENT_RE.test(n) && n.length >= 3) out.push(n);
       }
     }
-    for (const m of b.code.matchAll(CALL_RE)) {
+    const code = b.code
+      .split('\n')
+      .filter(
+        (l) =>
+          !/^\s*at\s/.test(l) &&
+          !/^\s*File ".+", line \d+/.test(l) &&
+          !ERROR_LINE_PATTERNS.some((re) => re.test(l)) &&
+          !/^\s*Traceback\b/.test(l),
+      )
+      .join('\n');
+    for (const m of code.matchAll(CALL_RE)) {
       const n = m[1]!;
       if (!NOT_CALLS.has(n) && !STOP_IDENTS.has(n.toLowerCase())) out.push(n);
     }
@@ -268,6 +329,7 @@ function identifiersFromCode(blocks: CodeBlock[]): string[] {
 }
 
 function searchQueries(
+  title: string,
   errors: string[],
   frames: StackFrame[],
   text: string,
@@ -275,7 +337,10 @@ function searchQueries(
   blocks: CodeBlock[],
 ): string[] {
   const q: string[] = [];
-  // 1. Function names from project stack frames (most specific).
+  // Frames whose paths resolved inside the workspace are the strongest signal; frames with
+  // absolute paths come from the reporter's machine (possibly their own code), so rank them lower.
+  const inRepo: string[] = [];
+  const foreign: string[] = [];
   for (const f of frames) {
     if (!isProjectFrame(f.file, { allowAbsolute: true }) || !f.function) continue;
     const name =
@@ -283,18 +348,25 @@ function searchQueries(
         .replace(/^(Object|Module|async|new)\./, '')
         .split('.')
         .pop() ?? '';
-    if (name && name !== '<module>' && name !== '<anonymous>' && !STOP_IDENTS.has(name.toLowerCase()))
-      q.push(name);
+    if (name && name !== '<module>' && name !== '<anonymous>' && !STOP_IDENTS.has(name.toLowerCase())) {
+      (path.isAbsolute(f.file) ? foreign : inRepo).push(name);
+    }
   }
+  // 1. Function names from in-repo stack frames.
+  q.push(...inRepo);
   // 2. Identifiers in inline code.
   for (const m of stripCode(text).matchAll(BACKTICK_RE)) {
     const tok = m[1]!.trim().replace(/\(\)$/, '');
     if (IDENT_RE.test(tok) && tok.length >= 3 && !STOP_IDENTS.has(tok.toLowerCase())) {
+      // `Math.floor` and friends are language builtins, not project symbols.
+      if (GLOBAL_OBJECTS.has(tok.split('.')[0]!)) continue;
       q.push(tok.includes('.') ? tok.split('.').pop()! : tok);
     }
   }
   // 3. Functions imported or called in code snippets.
   q.push(...identifiersFromCode(blocks));
+  // 3b. Function names from frames outside the workspace.
+  q.push(...foreign);
   // 4. Distinctive error message text (the part after "XxxError: ").
   for (const e of errors) {
     const m = /(?:\w*(?:Error|Exception)|Error):\s*(.+)$/.exec(e);
@@ -310,7 +382,33 @@ function searchQueries(
     if (base.length >= 3 && !STOP_IDENTS.has(base.toLowerCase()) && !/^(index|readme|package)$/i.test(base))
       q.push(base);
   }
+  // 6. Nothing concrete (typical for questions and feature requests): fall back to title keywords.
+  if (q.length === 0) {
+    for (const w of title.toLowerCase().split(/[^a-z0-9_]+/)) {
+      if (w.length >= 4 && !TITLE_STOPWORDS.has(w)) q.push(w.replace(/ies$/, 'y').replace(/([^s])s$/, '$1'));
+    }
+  }
   return uniq(q, (s) => s.toLowerCase()).slice(0, 10);
+}
+
+const TITLE_STOPWORDS = new Set(
+  'support supposed should would could does doesn with when what which this that there their from into about other work works working using have please feature request question issue problem possible'.split(
+    ' ',
+  ),
+);
+
+/**
+ * Map an absolute path from the reporter's machine onto the workspace by the longest path
+ * suffix that exists there, e.g. /home/me/shop/src/pricing.ts → src/pricing.ts.
+ */
+export function mapToWorkspace(file: string, root: string): string {
+  if (!path.isAbsolute(file)) return file;
+  const parts = file.split('/').filter(Boolean);
+  for (let i = Math.max(0, parts.length - 8); i < parts.length; i++) {
+    const rel = parts.slice(i).join('/');
+    if (existsSync(path.join(root, rel)) && isSafeRelative(root, rel)) return rel;
+  }
+  return file;
 }
 
 /** Deterministically extract triage signals from an issue. No LLM involved. */
@@ -324,13 +422,23 @@ export function analyzeIssueContent(issue: AnalyzableIssue, root?: string): Issu
   const code_blocks = sources.flatMap(([src, t]) => extractCodeBlocks(t, src));
   const error_messages = extractErrorMessages(all).slice(0, 20);
   const stack_frames = uniq(
-    parseStackFrames(all).map((f) => ({ ...f, file: normalizeFramePath(f.file, root) })),
+    parseStackFrames(all).map((f) => {
+      const file = normalizeFramePath(f.file, root);
+      return {
+        ...f,
+        file: root && isProjectFrame(file, { allowAbsolute: true }) ? mapToWorkspace(file, root) : file,
+      };
+    }),
     (f) => `${f.file}:${f.line}`,
   ).slice(0, 30);
   const framePaths = stack_frames
     .filter((f) => isProjectFrame(f.file, { allowAbsolute: true }))
     .map((f) => f.file);
-  const mentioned_paths = uniq([...extractMentionedPaths(all), ...framePaths]).slice(0, 30);
+  const mentioned_paths = uniq([
+    ...extractMentionedPaths(all),
+    ...extractModuleSpecifiers(code_blocks),
+    ...framePaths,
+  ]).slice(0, 30);
   const { type, signals } = guessType(issue, error_messages.length > 0, stack_frames.length > 0);
 
   return {
@@ -340,6 +448,13 @@ export function analyzeIssueContent(issue: AnalyzableIssue, root?: string): Issu
     stack_frames,
     mentioned_paths,
     code_blocks: code_blocks.slice(0, 10).map((b) => ({ ...b, code: truncateText(b.code, 2_000) })),
-    suggested_search_queries: searchQueries(error_messages, stack_frames, all, mentioned_paths, code_blocks),
+    suggested_search_queries: searchQueries(
+      issue.title,
+      error_messages,
+      stack_frames,
+      all,
+      mentioned_paths,
+      code_blocks,
+    ),
   };
 }

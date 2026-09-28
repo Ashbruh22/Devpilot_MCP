@@ -1,1 +1,677 @@
-<!doctype html><title>x</title>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevPilot MCP</title>
+    <meta
+      name="description"
+      content="DevPilot MCP gives your coding agent the issue, the code, and the failing tests in one loop."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c9cff'/%3E%3Cpath d='M9 22l7-12 7 12' stroke='%230b0e14' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --bg-2: #11151e;
+        --card: #151a25;
+        --border: #232a38;
+        --text: #e6e9ef;
+        --muted: #9aa3b5;
+        --accent: #7c9cff;
+        --accent-2: #5eead4;
+        --ok: #34d399;
+        --warn: #fbbf24;
+        --bad: #f87171;
+        --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+        --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .brand {
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand .logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        display: grid;
+        place-items: center;
+        color: var(--bg);
+        font-weight: 800;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--bg-2);
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--warn);
+        box-shadow: 0 0 0 0 currentColor;
+      }
+      .dot.ok {
+        background: var(--ok);
+        animation: pulse 2s infinite;
+        color: rgba(52, 211, 153, 0.5);
+      }
+      .dot.bad {
+        background: var(--bad);
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 currentColor;
+        }
+        70% {
+          box-shadow: 0 0 0 8px transparent;
+        }
+        100% {
+          box-shadow: 0 0 0 0 transparent;
+        }
+      }
+      .hero {
+        padding: 56px 0 32px;
+      }
+      .hero h1 {
+        font-size: clamp(32px, 5vw, 52px);
+        line-height: 1.1;
+        margin: 0 0 18px;
+        letter-spacing: -0.02em;
+      }
+      .hero h1 .grad {
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p.lead {
+        font-size: 19px;
+        color: var(--muted);
+        max-width: 720px;
+        margin: 0 0 28px;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .pill {
+        font-size: 12px;
+        font-family: var(--mono);
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 3px 8px;
+      }
+      section {
+        padding: 36px 0;
+      }
+      h2 {
+        font-size: 24px;
+        margin: 0 0 6px;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 22px;
+      }
+      .video {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        background: radial-gradient(ellipse at top, #1a2133, var(--bg-2));
+        display: grid;
+        place-items: center;
+      }
+      .video iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+      .video .placeholder {
+        text-align: center;
+        color: var(--muted);
+        padding: 20px;
+      }
+      .video .play {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid var(--accent);
+        display: grid;
+        place-items: center;
+        margin: 0 auto 12px;
+        color: var(--accent);
+        font-size: 22px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+      }
+      .card .name {
+        font-family: var(--mono);
+        color: var(--accent-2);
+        font-size: 15px;
+        margin-bottom: 6px;
+      }
+      .card .step {
+        float: right;
+        font-size: 12px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14.5px;
+      }
+      .connect {
+        display: grid;
+        gap: 14px;
+      }
+      .cmd {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+      }
+      .cmd .label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .cmd .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .cmd code {
+        flex: 1;
+        font-family: var(--mono);
+        font-size: 13.5px;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 4px 0;
+        color: var(--text);
+      }
+      button.copy {
+        font: inherit;
+        font-size: 13px;
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      button.copy:hover {
+        border-color: var(--accent);
+      }
+      button.copy.done {
+        color: var(--ok);
+        border-color: var(--ok);
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .diagram {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        overflow-x: auto;
+      }
+      .diagram svg {
+        display: block;
+        width: 100%;
+        min-width: 720px;
+        height: auto;
+      }
+      .sec {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+      }
+      .sec .card h3 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      .why {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 14px;
+      }
+      .why .card h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        margin-top: 30px;
+        padding: 26px 0 40px;
+        color: var(--muted);
+        font-size: 14px;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      footer nav {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="brand"><span class="logo">D</span> DevPilot MCP</div>
+        <span class="status" title="Live server status from /healthz"
+          ><span id="dot" class="dot"></span><span id="status-text">checking…</span></span
+        >
+      </header>
+
+      <div class="hero">
+        <h1>
+          DevPilot MCP: give your coding agent
+          <span class="grad">the issue, the code, and the failing tests</span> in one loop.
+        </h1>
+        <p class="lead">
+          A Model Context Protocol server that hands AI coding agents like Claude Code structured, size-capped
+          context: GitHub issues, ripgrep search, project docs, and test runs with failures grouped by root
+          cause. It makes no LLM calls of its own. The agent's model does the reasoning.
+        </p>
+        <div class="pills">
+          <span class="pill">6 tools</span><span class="pill">stdio + Streamable HTTP</span
+          ><span class="pill">TypeScript · MCP SDK v2</span><span class="pill">vitest · jest · pytest</span
+          ><span class="pill">read-only GitHub</span>
+        </div>
+      </div>
+
+      <section id="demo">
+        <h2>Demo</h2>
+        <p class="sub">
+          Claude Code triaging a demo-repo issue end to end with the <code>triage_issue</code> prompt.
+        </p>
+        <!-- Set data-video-url to a YouTube/Loom *embed* URL to show the demo video. -->
+        <div class="video" id="video" data-video-url="">
+          <div class="placeholder">
+            <div class="play">▶</div>
+            Demo video coming soon.
+          </div>
+        </div>
+      </section>
+
+      <section id="tools">
+        <h2>The loop, as six tools</h2>
+        <p class="sub">
+          Each tool validates input with zod, returns structured output plus a short summary, and caps its
+          size.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <div class="name">get_issue <span class="step">1</span></div>
+            <p>
+              Fetch an issue with its discussion, labels and linked PRs. Cached for 60 s to save rate limit.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">analyze_issue <span class="step">2</span></div>
+            <p>
+              Deterministic extraction: type guess, error messages, stack frames, paths, code blocks, search
+              queries.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">search_codebase <span class="step">3</span></div>
+            <p>
+              ripgrep with context lines. Respects .gitignore and skips deps, builds, lockfiles and binaries.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">get_docs <span class="step">·</span></div>
+            <p>README, CONTRIBUTING and docs/**, split by heading and ranked by keyword hits for a topic.</p>
+          </div>
+          <div class="card">
+            <div class="name">run_tests <span class="step">4</span></div>
+            <p>
+              Auto-detects vitest, jest, pytest or npm test. No shell, a timeout, a tree kill, and a sanitized
+              env.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">summarize_test_failures <span class="step">5</span></div>
+            <p>Failures grouped by normalized error, largest first, with the likely source files to fix.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="connect">
+        <h2>Connect</h2>
+        <p class="sub">Add DevPilot to Claude Code, or to any MCP client.</p>
+        <div class="connect">
+          <div class="cmd">
+            <div class="label"><span>Local (stdio, works on the repo in your current directory)</span></div>
+            <div class="row">
+              <code id="cmd-local">claude mcp add devpilot -- npx -y @ashbruh22/devpilot-mcp</code
+              ><button class="copy" data-target="cmd-local">Copy</button>
+            </div>
+          </div>
+          <div class="cmd">
+            <div class="label">
+              <span>Remote (Streamable HTTP, this server's allowlisted demo repo)</span>
+            </div>
+            <div class="row">
+              <code id="cmd-remote"
+                >claude mcp add --transport http devpilot https://&lt;your-app&gt;.onrender.com/mcp</code
+              ><button class="copy" data-target="cmd-remote">Copy</button>
+            </div>
+          </div>
+          <div class="cmd">
+            <div class="label"><span>Then, in Claude Code</span></div>
+            <div class="row">
+              <code id="cmd-prompt">/mcp__devpilot__triage_issue Ashbruh22 devpilot-demo 1</code
+              ><button class="copy" data-target="cmd-prompt">Copy</button>
+            </div>
+          </div>
+          <p class="note">
+            Free-tier hosting sleeps when idle, so the first request may take 30–60 s while the server wakes
+            up. If the server requires a key, add <code>--header "Authorization: Bearer &lt;key&gt;"</code>.
+          </p>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture</h2>
+        <p class="sub">Two transports, one core. Tool logic knows nothing about how it is being called.</p>
+        <div class="diagram">
+          <svg viewBox="0 0 980 300" role="img" aria-labelledby="arch-title">
+            <title id="arch-title">
+              MCP client connects over stdio or Streamable HTTP to the DevPilot tool layer, which calls the
+              GitHub API, ripgrep, and the test runner.
+            </title>
+            <defs>
+              <marker
+                id="arr"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M0,0 L10,5 L0,10 z" fill="#7c9cff" />
+              </marker>
+            </defs>
+            <g font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#e6e9ef">
+              <!-- client -->
+              <rect x="10" y="105" width="170" height="90" rx="12" fill="#151a25" stroke="#232a38" />
+              <text x="95" y="143" text-anchor="middle" font-weight="700">MCP client</text>
+              <text x="95" y="166" text-anchor="middle" fill="#9aa3b5" font-size="12">
+                Claude Code, Inspector…
+              </text>
+
+              <!-- transports -->
+              <rect x="250" y="60" width="180" height="70" rx="12" fill="#151a25" stroke="#5eead4" />
+              <text x="340" y="92" text-anchor="middle" font-weight="700">stdio</text>
+              <text x="340" y="113" text-anchor="middle" fill="#9aa3b5" font-size="12">npx, local repo</text>
+              <rect x="250" y="170" width="180" height="70" rx="12" fill="#151a25" stroke="#5eead4" />
+              <text x="340" y="199" text-anchor="middle" font-weight="700">Streamable HTTP</text>
+              <text x="340" y="220" text-anchor="middle" fill="#9aa3b5" font-size="12">
+                POST /mcp, auth, rate limit
+              </text>
+
+              <!-- tool layer -->
+              <rect x="500" y="40" width="200" height="220" rx="12" fill="#151a25" stroke="#7c9cff" />
+              <text x="600" y="68" text-anchor="middle" font-weight="700">Tool layer</text>
+              <text x="600" y="90" text-anchor="middle" fill="#9aa3b5" font-size="12">
+                createServer(deps)
+              </text>
+              <g font-size="12" fill="#5eead4">
+                <text x="520" y="120">get_issue</text>
+                <text x="520" y="142">analyze_issue</text>
+                <text x="520" y="164">search_codebase</text>
+                <text x="520" y="186">get_docs</text>
+                <text x="520" y="208">run_tests</text>
+                <text x="520" y="230">summarize_test_failures</text>
+              </g>
+
+              <!-- backends -->
+              <rect x="780" y="30" width="190" height="64" rx="12" fill="#151a25" stroke="#232a38" />
+              <text x="875" y="58" text-anchor="middle" font-weight="700">GitHub API</text>
+              <text x="875" y="78" text-anchor="middle" fill="#9aa3b5" font-size="12">
+                read-only, 60 s cache
+              </text>
+              <rect x="780" y="118" width="190" height="64" rx="12" fill="#151a25" stroke="#232a38" />
+              <text x="875" y="146" text-anchor="middle" font-weight="700">ripgrep</text>
+              <text x="875" y="166" text-anchor="middle" fill="#9aa3b5" font-size="12">
+                path-guarded workspace
+              </text>
+              <rect x="780" y="206" width="190" height="64" rx="12" fill="#151a25" stroke="#232a38" />
+              <text x="875" y="234" text-anchor="middle" font-weight="700">Test runner</text>
+              <text x="875" y="254" text-anchor="middle" fill="#9aa3b5" font-size="12">
+                no shell, timeout, tree kill
+              </text>
+            </g>
+            <g stroke="#7c9cff" stroke-width="2" fill="none" marker-end="url(#arr)" marker-start="url(#arr)">
+              <path d="M182 135 L248 98" />
+              <path d="M182 165 L248 202" />
+              <path d="M432 95 L498 130" />
+              <path d="M432 205 L498 170" />
+              <path d="M702 110 L778 62" />
+              <path d="M702 150 L778 150" />
+              <path d="M702 190 L778 238" />
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <section id="security">
+        <h2>Security model</h2>
+        <p class="sub">
+          Running tests on a public server is remote code execution by design, so it is locked down.
+        </p>
+        <div class="sec">
+          <div class="card">
+            <h3>Allowlist only</h3>
+            <p>
+              Only repos in <code>ALLOWED_REPOS</code>, shallow-cloned at boot. Everything else is rejected.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Fixed commands</h3>
+            <p>
+              Test commands come from server config, never from tool input. Filters are validated, and a
+              filter can't pass flags.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Resource limits</h3>
+            <p>
+              Timeout with process-tree kill, capped output, one concurrent run per repo, and a per-IP rate
+              limit.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Least privilege</h3>
+            <p>
+              Non-root container, a read-only fine-grained token, and secrets stripped from child processes.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Path guard</h3>
+            <p>
+              Every path is resolved and checked against the workspace root. Symlink escapes are rejected.
+            </p>
+          </div>
+          <div class="card">
+            <h3>No arbitrary fetches</h3>
+            <p>Tools never fetch URLs from their inputs. GitHub is the only outbound API.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="why">
+        <h2>Why no LLM inside?</h2>
+        <div class="why">
+          <div class="card">
+            <h3>Deterministic</h3>
+            <p>The same issue yields the same extraction, which you can test with fixtures.</p>
+          </div>
+          <div class="card">
+            <h3>Cheap and fast</h3>
+            <p>There are no tokens spent server-side and no second model in the loop.</p>
+          </div>
+          <div class="card">
+            <h3>The client already reasons</h3>
+            <p>
+              The server's job is to return clean, compact context, and the agent decides what to do with it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span>DevPilot MCP <span id="version"></span> · MIT</span>
+        <nav>
+          <a href="https://github.com/Ashbruh22/devpilot_mcp">GitHub</a>
+          <a href="https://www.npmjs.com/package/@ashbruh22/devpilot-mcp">npm</a>
+          <a href="https://github.com/Ashbruh22" id="portfolio">Portfolio</a>
+          <a href="/healthz">/healthz</a>
+        </nav>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        // Remote command uses this server's real origin.
+        var remote = document.getElementById('cmd-remote');
+        if (location.protocol.indexOf('http') === 0) {
+          remote.textContent = 'claude mcp add --transport http devpilot ' + location.origin + '/mcp';
+        }
+
+        // Copy buttons.
+        document.querySelectorAll('button.copy').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var text = document.getElementById(btn.dataset.target).textContent;
+            var done = function () {
+              btn.textContent = 'Copied';
+              btn.classList.add('done');
+              setTimeout(function () {
+                btn.textContent = 'Copy';
+                btn.classList.remove('done');
+              }, 1500);
+            };
+            if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done);
+            else done();
+          });
+        });
+
+        // Demo video embed, if configured.
+        var video = document.getElementById('video');
+        var url = video.getAttribute('data-video-url');
+        if (url) {
+          var iframe = document.createElement('iframe');
+          iframe.src = url;
+          iframe.title = 'DevPilot MCP demo';
+          iframe.allow = 'accelerometer; clipboard-write; encrypted-media; picture-in-picture; fullscreen';
+          iframe.allowFullscreen = true;
+          video.innerHTML = '';
+          video.appendChild(iframe);
+        }
+
+        // Live status dot.
+        var dot = document.getElementById('dot');
+        var text = document.getElementById('status-text');
+        function check() {
+          var ctrl = new AbortController();
+          var t = setTimeout(function () {
+            ctrl.abort();
+          }, 60000);
+          fetch('/healthz', { signal: ctrl.signal, cache: 'no-store' })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (h) {
+              clearTimeout(t);
+              dot.className = 'dot ok';
+              var ready = (h.workspaces || []).every(function (w) {
+                return w.status === 'ready';
+              });
+              text.textContent = 'online · v' + h.version + (ready ? '' : ' · preparing workspace');
+              document.getElementById('version').textContent = 'v' + h.version;
+            })
+            .catch(function () {
+              clearTimeout(t);
+              dot.className = 'dot bad';
+              text.textContent = 'offline';
+            });
+        }
+        check();
+        setInterval(check, 30000);
+      })();
+    </script>
+  </body>
+</html>

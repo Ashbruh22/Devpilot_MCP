@@ -35,14 +35,16 @@ export interface FailureGroup {
  */
 export function normalizeMessage(message: string): string {
   const first = message.split('\n').find((l) => l.trim()) ?? '';
-  return first
-    .trim()
-    .replace(/0x[0-9a-f]+/gi, '<hex>')
-    .replace(/(["'`])(?:(?!\1).){0,200}\1/g, '<str>')
-    .replace(/(?:[A-Za-z]:)?(?:\/[\w.@-]+){2,}/g, '<path>')
-    .replace(/-?\d+(\.\d+)?(e[+-]?\d+)?/gi, '<n>')
-    .replace(/\s+/g, ' ')
-    .slice(0, 200);
+  return (
+    first
+      .trim()
+      .replace(/0x[0-9a-f]+/gi, '<hex>')
+      .replace(/(["'`])(?:(?!\1).){0,200}\1/g, '<str>')
+      .replace(/(?:[A-Za-z]:)?(?:\/[\w.@-]+){2,}/g, '<path>')
+      .replace(/-?\d+(\.\d+)?(e[+-]?\d+)?/gi, '<n>')
+      .replace(/\s+/g, ' ')
+      .slice(0, 200) || '(no message)'
+  );
 }
 
 /** When the stack has no source frames, guess from naming: src/x.test.ts → src/x.ts, tests/test_x.py → x.py. */
@@ -107,7 +109,7 @@ export function summarizeFailure(f: ParsedFailure, root: string): FailureSummary
 export function groupFailures(failures: FailureSummary[]): FailureGroup[] {
   const groups = new Map<string, FailureGroup>();
   for (const f of failures) {
-    const sig = normalizeMessage(f.message) || '(no message)';
+    const sig = normalizeMessage(f.message);
     let g = groups.get(sig);
     if (!g)
       groups.set(

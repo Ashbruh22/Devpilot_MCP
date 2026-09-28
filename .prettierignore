@@ -5,3 +5,4 @@ package-lock.json
 test/fixtures
 demo/**/package-lock.json
 bench/results.csv
+demo/issues
