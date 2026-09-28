@@ -24,6 +24,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "inspector": "npx -y @modelcontextprotocol/inspector node dist/stdio.js",
+    "bench:summary": "tsx bench/summary.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

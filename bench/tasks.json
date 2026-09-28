@@ -1,0 +1,83 @@
+[
+  {
+    "id": "T01",
+    "issue": 1,
+    "prompt": "Find the root cause of issue #1 and the file to change.",
+    "answer": {
+      "files": ["src/pricing.ts"],
+      "root_cause": "roundToCents truncates with Math.floor instead of rounding (Math.round)"
+    }
+  },
+  {
+    "id": "T02",
+    "issue": 2,
+    "prompt": "Find the root cause of issue #2 and the file to change.",
+    "answer": {
+      "files": ["src/dateUtils.ts"],
+      "root_cause": "daysInMonth uses Date.UTC(year, month + 1, 0), i.e. the following month's length"
+    }
+  },
+  {
+    "id": "T03",
+    "issue": 3,
+    "prompt": "Issue #3 is a feature request. Which file(s) would change, and is there any existing currency handling?",
+    "answer": {
+      "files": ["src/pricing.ts", "docs/pricing.md"],
+      "root_cause": "no currency handling exists; USD only per docs/contributing.md"
+    }
+  },
+  {
+    "id": "T04",
+    "issue": 4,
+    "prompt": "Answer issue #4 from the docs, and say whether the code matches the documented behaviour.",
+    "answer": {
+      "files": ["docs/pricing.md", "src/pricing.ts"],
+      "root_cause": "docs: half-up to cents, bulk per line before coupon; code truncates (issue #1)"
+    }
+  },
+  {
+    "id": "T05",
+    "issue": 5,
+    "prompt": "Is issue #5 a bug? Point to the code and docs that decide it.",
+    "answer": {
+      "files": ["src/pricing.ts", "docs/pricing.md"],
+      "root_cause": "not a bug: bulkDiscountPercent gives 5% at 10+ units, then the coupon applies"
+    }
+  },
+  {
+    "id": "T06",
+    "issue": null,
+    "prompt": "The test 'applyDiscount > rounds to the nearest cent' fails. Find the root cause and the file to change.",
+    "answer": { "files": ["src/pricing.ts"], "root_cause": "roundToCents truncates" }
+  },
+  {
+    "id": "T07",
+    "issue": null,
+    "prompt": "The test 'dates > clamps to the end of February in a leap year' fails. Find the root cause and the file to change.",
+    "answer": { "files": ["src/dateUtils.ts"], "root_cause": "daysInMonth is off by one month" }
+  },
+  {
+    "id": "T08",
+    "issue": 1,
+    "prompt": "For issue #1, which function validates the discount percent and what does it throw on bad input?",
+    "answer": { "files": ["src/pricing.ts"], "root_cause": "assertValidPercent throws RangeError" }
+  },
+  {
+    "id": "T09",
+    "issue": 2,
+    "prompt": "For issue #2, where are invoice due dates computed and how are term days counted?",
+    "answer": {
+      "files": ["src/dateUtils.ts"],
+      "root_cause": "dueDate adds termDays * 24h in UTC (calendar days, default 30)"
+    }
+  },
+  {
+    "id": "T10",
+    "issue": 1,
+    "prompt": "Run the suite. Which failing tests share issue #1's root cause, and which file fixes them?",
+    "answer": {
+      "files": ["src/pricing.ts"],
+      "root_cause": "only 'rounds to the nearest cent'; the date failure is issue #2"
+    }
+  }
+]

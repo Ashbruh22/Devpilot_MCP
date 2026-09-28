@@ -1,0 +1,17 @@
+name: Keep hosted demo warm
+
+# Free Render instances sleep when idle. Set the repository variable DEVPILOT_URL
+# (e.g. https://devpilot-mcp.onrender.com) to enable; the job is skipped otherwise.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    if: ${{ vars.DEVPILOT_URL != '' }}
+    steps:
+      - run: curl -fsS --max-time 90 "${{ vars.DEVPILOT_URL }}/healthz"

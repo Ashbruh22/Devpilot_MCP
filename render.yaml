@@ -1,0 +1,28 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: devpilot-mcp
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: DEVPILOT_MODE
+        value: remote
+      - key: ALLOWED_REPOS
+        value: Ashbruh22/devpilot-demo@main
+      - key: TEST_COMMANDS
+        value: '{"Ashbruh22/devpilot-demo":"npx --no vitest run --reporter=json"}'
+      - key: TEST_TIMEOUT_MS
+        value: '120000'
+      - key: MAX_OUTPUT_CHARS
+        value: '20000'
+      - key: RATE_LIMIT_PER_MIN
+        value: '60'
+      # Fine-grained PAT: read-only, public repositories only. Set it in the dashboard.
+      - key: GITHUB_TOKEN
+        sync: false
+      # Optional. Leave unset to run as a public read-only demo.
+      - key: DEVPILOT_API_KEY
+        sync: false
